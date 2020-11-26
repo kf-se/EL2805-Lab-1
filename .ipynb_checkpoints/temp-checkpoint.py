@@ -39,16 +39,11 @@ class Maze:
     MINOTAUR_REWARD = -100
 
 
-    def __init__(self, maze, weights=None, random_rewards=False, m_no_stay=False):
+    def __init__(self, maze, weights=None, random_rewards=False, minotaur_moves=4):
         """ Constructor of the environment Maze.
         """
         self.maze                     = maze; 
-        # ==========================MINOTAUR=============================
-        self.mnostay                  = m_no_stay;
-        self.mpos                     = 61;                  # position of minotaur
-        self.mstates, self.mmap       = self.__m_states();
-        self.n_mstates                = len(self.mstates);
-        # ==========================PLAYER===============================
+        self.min_moves                = minotaur_moves;
         self.actions                  = self.__actions();
         self.states, self.map         = self.__states();
         self.n_actions                = len(self.actions);
@@ -74,10 +69,12 @@ class Maze:
         s = 0;
         for i in range(self.maze.shape[0]):
             for j in range(self.maze.shape[1]):
-                if self.maze[i,j] != 1:
-                    states[s] = (i,j);
-                    map[(i,j)] = s;
-                    s += 1;
+                for im in range(self.maze.shape[0]):
+                    for jm in range (self.maze.shape[1]):
+                        if self.maze[i,j] != 1:
+                            states[s] = (i, j, im, jm);
+                            map[(i, j, im, jm)] = s;
+                            s += 1;
         return states, map
 
     def __move(self, state, action):
@@ -93,14 +90,20 @@ class Maze:
         hitting_maze_walls =  (row == -1) or (row == self.maze.shape[0]) or \
                               (col == -1) or (col == self.maze.shape[1]) or \
                               (self.maze[row,col] == 1);
+        if hitting_maze_walls:
+            row = self.states[state][0]
+            col = self.states[state][1]
         # ===========================MINOTAUR===================================
-        self.__move_minotaur();
+        mstates = []
+        for maction in self.actions:
+            mrow, mcol = self.__move_minotaur(state, maction);
+            mstates.append((row, col, mrow, mcol));
         #=======================================================================
         # Based on the impossiblity check return the next state.
         if hitting_maze_walls:
-            return state;
+            return state, mstates;
         else:
-            return self.map[(row, col)];
+            return self.map[(row, col, mrow, mcol)], mstates;
    
     def __transitions(self):
         """ Computes the transition probabilities for every state action pair.
@@ -115,8 +118,9 @@ class Maze:
         # are deterministic.
         for s in range(self.n_states):
             for a in range(self.n_actions):
-                next_s = self.__move(s,a);
-                transition_probabilities[next_s, s, a] = 1;
+                _, mstates = self.__move(s,a);
+                for next_s in mstates:
+                    transition_probabilities[next_s, s, a] = 1/self.min_moves;
         return transition_probabilities;
 
     def __rewards(self, weights=None, random_rewards=None):
@@ -127,31 +131,24 @@ class Maze:
         if weights is None:
             for s in range(self.n_states):
                 for a in range(self.n_actions):
-                    next_s = self.__move(s,a);
+                    next_s, mstates = self.__move(s,a);
+                    
+                    p_pos = self.map[self.states[state][0:2]]
+                    m_pos = self.map[self.states[state][2:4]]
                     # Reward for hitting a wall
                     if s == next_s and a != self.STAY:
                         rewards[s,a] = self.IMPOSSIBLE_REWARD;
                     # Reward for reaching the exit
-                    elif s == next_s and self.maze[self.states[next_s]] == 2:
-                        rewards[s,a] = self.GOAL_REWARD;
-                        
+                    elif p_pos == 2:
+                        rewards[s,a] = self.GOAL_REWARD;    
                     # Reward for walking into minotaur
-                    elif next_s == self.mstates[self.mpos]:
-                        rewards[s,a] = self.MINOTAUR_REWARD;
+                    elif p_pos == m_pos:
+                        rewards[s,a] = self.MINOTAUR_REWARD
                         
                     # Reward for taking a step to an empty cell that is not the exit
                     else:
                         rewards[s,a] = self.STEP_REWARD;
                     
-                    # If there exists trapped cells with probability 0.5
-                    if random_rewards and self.maze[self.states[next_s]]<0:
-                        row, col = self.states[next_s];
-                        # With probability 0.5 the reward is
-                        r1 = (1 + abs(self.maze[row, col])) * rewards[s,a];
-                        # With probability 0.5 the reward is
-                        r2 = rewards[s,a];
-                        # The average reward
-                        rewards[s,a] = 0.5*r1 + 0.5*r2;
         # If the weights are described by a weight matrix
         else:
             for s in range(self.n_states):
@@ -178,23 +175,24 @@ class Maze:
               s+=1;
         return states, map;
     
-    def __move_minotaur(self):
+    def __move_minotaur(self, state, maction=None):
         """ Makes a step in the maze given a current state and action
             available actions depend on wether he can stay or not
             """
-        if self.mnostay:
-            maction = np.random.randint(1, 5)
+        if(maction is None):
+            if self.mnostay:
+                maction = np.random.randint(1, 5)
+            else:
+                maction = np.random.randint(0,5);
+           
+        row = self.states[state][2] + self.actions[maction][0]
+        col = self.states[state][3] + self.actions[maction][1]
+        hitting_maze_boundaries = (row == -1) or (row == self.maze.shape[0]) or \
+                                  (col == -1) or (col == self.maze.shape[1]);
+        if hitting_maze_boundaries:
+            return self.states[state][2], self.states[state][3];                                # Stay in place
         else:
-            maction = np.random.randint(0,5);
-        state = self.mpos
-        row = self.mstates[state][0] + self.actions[maction][0]
-        col = self.mstates[state][1] + self.actions[maction][1]
-        hitting_walls = (row == -1) or (row == self.maze.shape[0]) or \
-                        (col == -1) or (col == self.maze.shape[1]);
-        if hitting_walls:
-            return;                                # Stay in place
-        else:
-            self.mpos = self.mmap[(row, col)];     # Update state
+            return row, col;     # Update state
             
     def is_dead(self, path, mpath):
         0;
