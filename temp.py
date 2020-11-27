@@ -35,7 +35,7 @@ class Maze:
 
     # Reward values
     STEP_REWARD = -1
-    GOAL_REWARD = 0
+    GOAL_REWARD = 10000000
     IMPOSSIBLE_REWARD = -100
     MINOTAUR_REWARD = 0
 
@@ -110,7 +110,8 @@ class Maze:
         mrow, mcol = self.__move_minotaur(state, self.actions[mrandom_action]);   # Make random action
         #=======================================================================
         # Based on the impossiblity check return the next state.
-        return self.map[(row, col, mrow, mcol)], mstates;
+        next_state = self.map[(row, col, mrow, mcol)]
+        return next_state, mstates;
    
     def __transitions(self):
         """ Computes the transition probabilities for every state action pair.
@@ -143,6 +144,7 @@ class Maze:
                     p_pos = self.states[s][0:2];
                     
                     #cumulative_reward = 0.0;
+                    
                     for next_s in mstates:
                         next_p_pos = next_s[0:2];
                         next_m_pos = next_s[2:4];
@@ -151,7 +153,7 @@ class Maze:
                             rewards[s,a] = self.IMPOSSIBLE_REWARD;
                             #cumulative_reward += self.IMPOSSIBLE_REWARD;
                         # Reward for reaching the exit
-                        elif next_p_pos == 2:
+                        elif self.maze[next_p_pos] == 2:
                             rewards[s,a] = self.GOAL_REWARD;
                             #cumulative_reward += self.GOAL_REWARD;    
                         # Reward for walking into minotaur
@@ -162,6 +164,7 @@ class Maze:
                         else:
                             rewards[s,a] = self.STEP_REWARD;
                             #cumulative_reward += self.STEP_REWARD;
+                    print(self.states[s], mstates, rewards[s,:])
                     #rewards[s,a] = cumulative_reward/len(mstates);
         # If the weights are described by a weight matrix
         else:
@@ -300,13 +303,20 @@ def dynamic_programming(env, horizon):
             for a in range(n_actions):
                 # Update of the temporary Q values
                 Q[s,a] = r[s,a] + np.dot(p[:,s,a],V[:,t+1])
-                if(s == 60):
-                    #pass;
-                    print(Q[s,a])
+                if(s == 2898 ):
+                    #print(s, Q[s,a])
+                    #print(np.argmax(Q[s,a],0))
+                    pass;
+                if(s == 123):
+                    pass;
+                if(s == 564 ):
+                    pass;
+                    #print(s, np.argmax(Q[s,a],0))
         # Update by taking the maximum Q value w.r.t the action a
         V[:,t] = np.max(Q,1);
         # The optimal action is the one that maximizes the Q function
         policy[:,t] = np.argmax(Q,1);
+        print("policy at end position", policy[2898,:])
     return V, policy;
 
 def value_iteration(env, gamma, epsilon):
