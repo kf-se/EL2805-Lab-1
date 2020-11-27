@@ -34,8 +34,8 @@ class Maze:
     }
 
     # Reward values
-    STEP_REWARD = 0
-    GOAL_REWARD = 1
+    STEP_REWARD = -1
+    GOAL_REWARD = 0
     IMPOSSIBLE_REWARD = -100
     MINOTAUR_REWARD = 0
 
@@ -301,8 +301,8 @@ def dynamic_programming(env, horizon):
                 # Update of the temporary Q values
                 Q[s,a] = r[s,a] + np.dot(p[:,s,a],V[:,t+1])
                 if(s == 60):
-                    pass;
-                    #print(Q[s,a])
+                    #pass;
+                    print(Q[s,a])
         # Update by taking the maximum Q value w.r.t the action a
         V[:,t] = np.max(Q,1);
         # The optimal action is the one that maximizes the Q function
