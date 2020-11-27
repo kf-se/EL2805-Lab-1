@@ -17,23 +17,24 @@ LIGHT_ORANGE = '#FAE0C3';
 class Maze:
 
     # Actions
-    MOVE_LEFT  = 0
-    MOVE_RIGHT = 1
-    MOVE_UP    = 2
-    MOVE_DOWN  = 3
-    STAY       = 4
+    STAY       = 0
+    MOVE_LEFT  = 1
+    MOVE_RIGHT = 2
+    MOVE_UP    = 3
+    MOVE_DOWN  = 4
+   
 
     # Give names to actions
-    actions_names = {  
+    actions_names = {      
         STAY: "stay",
         MOVE_LEFT: "move left",
         MOVE_RIGHT: "move right",
         MOVE_UP: "move up",
-        MOVE_DOWN: "move down"
+        MOVE_DOWN: "move down" 
     }
 
     # Reward values
-    STEP_REWARD = -1
+    STEP_REWARD = 0
     GOAL_REWARD = 1
     IMPOSSIBLE_REWARD = -100
     MINOTAUR_REWARD = 0
@@ -102,7 +103,7 @@ class Maze:
         # ===========================MINOTAUR===================================
         mstates = []
         for i in range(self.min_moves):          
-            maction = self.actions[i];
+            maction = self.actions[i+1];
             mrow, mcol = self.__move_minotaur(state, maction);
             mstates.append((row, col, mrow, mcol));
         mrandom_action = np.random.randint(self.min_moves)
@@ -300,7 +301,8 @@ def dynamic_programming(env, horizon):
                 # Update of the temporary Q values
                 Q[s,a] = r[s,a] + np.dot(p[:,s,a],V[:,t+1])
                 if(s == 60):
-                    print(Q[s,a])
+                    pass;
+                    #print(Q[s,a])
         # Update by taking the maximum Q value w.r.t the action a
         V[:,t] = np.max(Q,1);
         # The optimal action is the one that maximizes the Q function
