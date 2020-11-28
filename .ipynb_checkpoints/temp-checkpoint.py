@@ -34,10 +34,10 @@ class Maze:
     }
 
     # Reward values
-    STEP_REWARD = -1
-    GOAL_REWARD = 10000000
+    STEP_REWARD = 0
+    GOAL_REWARD = 2
     IMPOSSIBLE_REWARD = -100
-    MINOTAUR_REWARD = 0
+    MINOTAUR_REWARD = -1
 
 
     def __init__(self, maze, weights=None, random_rewards=False, minotaur_moves=4):
@@ -164,7 +164,8 @@ class Maze:
                         else:
                             rewards[s,a] = self.STEP_REWARD;
                             #cumulative_reward += self.STEP_REWARD;
-                    print(self.states[s], mstates, rewards[s,:])
+                    if(self.states[s] == (0,0,0,0)):
+                        print(self.states[s], mstates, rewards[s,:])
                     #rewards[s,a] = cumulative_reward/len(mstates);
         # If the weights are described by a weight matrix
         else:
@@ -316,7 +317,6 @@ def dynamic_programming(env, horizon):
         V[:,t] = np.max(Q,1);
         # The optimal action is the one that maximizes the Q function
         policy[:,t] = np.argmax(Q,1);
-        print("policy at end position", policy[2898,:])
     return V, policy;
 
 def value_iteration(env, gamma, epsilon):
@@ -457,10 +457,17 @@ def animate_solution(maze, path):
         grid.get_celld()[(path[i][2:4])].set_facecolor(LIGHT_PURPLE)
         grid.get_celld()[(path[i][2:4])].get_text().set_text('Minotaur')
         if i > 0:
-            grid.get_celld()[(path[i-1][0:2])].set_facecolor(col_map[maze[path[i-1][0:2]]])
-            grid.get_celld()[(path[i-1][0:2])].get_text().set_text('')
-            grid.get_celld()[(path[i-1][2:4])].set_facecolor(col_map[maze[path[i-1][2:4]]])
-            grid.get_celld()[(path[i-1][2:4])].get_text().set_text('')
+            print(i)
+            if path[i] == path[i-1]:
+                grid.get_celld()[(path[i-1][0:2])].set_facecolor(col_map[maze[path[i-1][0:2]]])
+                grid.get_celld()[(path[i-1][0:2])].get_text().set_text('')
+                grid.get_celld()[(path[i-1][2:4])].set_facecolor(col_map[maze[path[i-1][2:4]]])
+                grid.get_celld()[(path[i-1][2:4])].get_text().set_text('')
+            else:
+                grid.get_celld()[(path[i-1][0:2])].set_facecolor(col_map[maze[path[i-1][0:2]]])
+                grid.get_celld()[(path[i-1][0:2])].get_text().set_text('')
+                grid.get_celld()[(path[i-1][2:4])].set_facecolor(col_map[maze[path[i-1][2:4]]])
+                grid.get_celld()[(path[i-1][2:4])].get_text().set_text('')
         display.display(fig)
         display.clear_output(wait=True)
         time.sleep(1)
