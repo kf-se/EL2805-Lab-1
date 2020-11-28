@@ -129,7 +129,7 @@ class Maze:
                 _, mstates = self.__move(s,a);
                 prob = 1/len(mstates);
                 for next_s in mstates:
-                    transition_probabilities[next_s, s, a] = prob;
+                    transition_probabilities[self.map[next_s], s, a] = prob;
         return transition_probabilities;
 
     def __rewards(self, weights=None, random_rewards=None):
