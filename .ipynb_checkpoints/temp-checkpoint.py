@@ -34,10 +34,10 @@ class Maze:
     }
 
     # Reward values
-    STEP_REWARD = 0
-    GOAL_REWARD = 2
+    STEP_REWARD = -1
+    GOAL_REWARD = 50
     IMPOSSIBLE_REWARD = -100
-    MINOTAUR_REWARD = -1
+    MINOTAUR_REWARD = -10
 
 
     def __init__(self, maze, weights=None, random_rewards=False, minotaur_moves=4):
@@ -158,6 +158,7 @@ class Maze:
                             #cumulative_reward += self.GOAL_REWARD;    
                         # Reward for walking into minotaur
                         elif next_p_pos == next_m_pos:
+                            #print("Oh no! I am being eaten alive")
                             rewards[s,a] = self.MINOTAUR_REWARD;
                             #cumulative_reward += self.MINOTAUR_REWARD
                         # Reward for taking a step to an empty cell that is not the exit
@@ -197,12 +198,7 @@ class Maze:
         else:
             return row, col;     # Update state
 
-        
-    def simulate_survival_rate(self, start, mstart, policy, method, n_sim):
-        nsurvive = 0;
-        total_path = 0;
-        for i in range(n_sim):
-            path, mpath = self.simulate(start, mstart, policy, method)
+                    
         
     #===========================================================================
     def simulate(self, start, policy, method):
@@ -263,6 +259,25 @@ class Maze:
         print('The rewards:')
         print(self.rewards)
 
+        
+def simulate_survival_rate(start, env, n_sim, method):
+        nsurvive = 0;
+        total_path = 0;
+        p = 1/30;
+        horizon = 0
+        for i in range(n_sim):
+            horizon = np.random.geometric(p, size=1);
+            print(horizon[0])
+            V, policy= dynamic_programming(env,horizon[0]);
+            path = env.simulate(start, policy, method)
+            print(path)
+            for i, state in enumerate(path):
+                if state[0:2] == (6,6):
+                    nsurvive += 1
+                    break;
+        survival_rate = nsurvive/n_sim
+        return survival_rate
+                    
 def dynamic_programming(env, horizon):
     """ Solves the shortest path problem using dynamic programming
         :input Maze env           : The maze environment in which we seek to
