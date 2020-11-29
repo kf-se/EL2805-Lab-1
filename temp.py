@@ -267,10 +267,10 @@ def simulate_survival_rate(start, env, n_sim, method):
         horizon = 0
         for i in range(n_sim):
             horizon = np.random.geometric(p, size=1);
-            print(horizon[0])
+            #print(horizon[0])
             V, policy= dynamic_programming(env,horizon[0]);
             path = env.simulate(start, policy, method)
-            print(path)
+            #print(path)
             for i, state in enumerate(path):
                 if state[0:2] == (6,6):
                     nsurvive += 1
