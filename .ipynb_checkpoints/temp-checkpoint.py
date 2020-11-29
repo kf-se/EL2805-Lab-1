@@ -102,8 +102,11 @@ class Maze:
             col = self.states[state][1]
         # ===========================MINOTAUR===================================
         mstates = []
+        add = 0
+        if self.min_moves == 4:
+            add += 1
         for i in range(self.min_moves):          
-            maction = self.actions[i+1];
+            maction = self.actions[i+add];
             mrow, mcol = self.__move_minotaur(state, maction);
             mstates.append((row, col, mrow, mcol));
         mrandom_action = np.random.randint(self.min_moves)
@@ -165,8 +168,6 @@ class Maze:
                         else:
                             rewards[s,a] = self.STEP_REWARD;
                             #cumulative_reward += self.STEP_REWARD;
-                    if(self.states[s] == (0,0,0,0)):
-                        print(self.states[s], mstates, rewards[s,:])
                     #rewards[s,a] = cumulative_reward/len(mstates);
         # If the weights are described by a weight matrix
         else:
@@ -277,6 +278,24 @@ def simulate_survival_rate(start, env, n_sim, method):
                     break;
         survival_rate = nsurvive/n_sim
         return survival_rate
+
+def max_prob_survival(start, env, method, nsim):
+    prob = []
+    for horizon in range(15,21):
+        nsurvive = 0
+        #print(horizon)
+        for sim in range(0, nsim):
+            V, policy = dynamic_programming(env, horizon);
+            path = env.simulate(start, policy, method);
+            for i, state in enumerate(path):
+                    if state[0:2] == (6,6):
+                        #print("survived")
+                        nsurvive += 1
+                        break;
+        print("Horizon %s surivval rate %s" %(horizon, nsurvive/nsim))
+        prob.append(nsurvive/nsim)
+    return prob
+        
                     
 def dynamic_programming(env, horizon):
     """ Solves the shortest path problem using dynamic programming
@@ -473,16 +492,21 @@ def animate_solution(maze, path):
         grid.get_celld()[(path[i][2:4])].get_text().set_text('Minotaur')
         if i > 0:
             print(i)
-            if path[i] == path[i-1]:
+            text_a = "a: "
+            text_m = "m: "
+            if path[i][:2] == path[i-1][:2]:
+                text_a += str(i)
                 grid.get_celld()[(path[i-1][0:2])].set_facecolor(col_map[maze[path[i-1][0:2]]])
-                grid.get_celld()[(path[i-1][0:2])].get_text().set_text('')
+                grid.get_celld()[(path[i-1][0:2])].get_text().set_text(text_a)
+            if path[i][2:4] == path[i-1][2:4]:
+                text_m += str(i)
                 grid.get_celld()[(path[i-1][2:4])].set_facecolor(col_map[maze[path[i-1][2:4]]])
-                grid.get_celld()[(path[i-1][2:4])].get_text().set_text('')
+                grid.get_celld()[(path[i-1][2:4])].get_text().set_text(text_m)
             else:
                 grid.get_celld()[(path[i-1][0:2])].set_facecolor(col_map[maze[path[i-1][0:2]]])
-                grid.get_celld()[(path[i-1][0:2])].get_text().set_text('')
+                grid.get_celld()[(path[i-1][0:2])].get_text().set_text('agent: ' + str(i))
                 grid.get_celld()[(path[i-1][2:4])].set_facecolor(col_map[maze[path[i-1][2:4]]])
-                grid.get_celld()[(path[i-1][2:4])].get_text().set_text('')
+                grid.get_celld()[(path[i-1][2:4])].get_text().set_text('minot.: '+ str(i))
         display.display(fig)
         display.clear_output(wait=True)
         time.sleep(1)
