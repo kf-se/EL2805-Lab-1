@@ -49,6 +49,7 @@ class Maze:
         self.transition_probabilities = self.__transitions();
         self.rewards                  = self.__rewards(weights=weights,
                                                 random_rewards=random_rewards);
+        self.police_actions = []
 
     def __actions(self):
         actions = dict();
@@ -60,18 +61,21 @@ class Maze:
         return actions;
 
     def __states(self):
+        
         states = dict();
         map = dict();
         end = False;
         s = 0;
         for i in range(self.maze.shape[0]):
             for j in range(self.maze.shape[1]):
-                if self.maze[i,j] != 1:
-                    states[s] = (i,j);
-                    map[(i,j)] = s;
-                    s += 1;
+                for im in range(self.maze.shape[0]):
+                    for jm in range (self.maze.shape[1]):
+                        if self.maze[i,j] != 1:
+                            states[s] = (i, j, im, jm);
+                            map[(i, j, im, jm)] = s;
+                            s += 1;
         return states, map
-
+    
     def __move(self, state, action):
         """ Makes a step in the maze, given a current position and an action.
             If the action STAY or an inadmissible action is used, the agent stays in place.
@@ -83,14 +87,74 @@ class Maze:
         col = self.states[state][1] + self.actions[action][1];
         # Is the future position an impossible one ?
         hitting_maze_walls =  (row == -1) or (row == self.maze.shape[0]) or \
-                              (col == -1) or (col == self.maze.shape[1]) or \
-                              (self.maze[row,col] == 1);
+                              (col == -1) or (col == self.maze.shape[1])
         # Based on the impossiblity check return the next state.
         if hitting_maze_walls:
             return state;
         else:
-            return self.map[(row, col)];
+            return self.map[(row, col, self.states[state][2] , self.states[state][3]  )];
 
+    def __move_minotaur(self, state, maction=None):
+        """ Makes a step in the maze given a current state and action
+            available actions depend on wether he can stay or not
+            """
+        
+        
+        ar, ac , pr, pc = self.states[state]
+        
+        
+        if(maction is None):
+            
+            if ar == pr:
+                if ac > pc:
+                    self.police_actions = [2, 3, 4]
+                elif ac< pc:
+                    self.police_actions = [1, 3, 4]
+            elif ac == pc:
+                if ar > pr:
+                    self.police_actions = [1, 2, 3]
+                elif pr > ar:
+                    self.police_actions = [1, 2, 4]
+            elif pr > ar:
+                if pc > ac:
+                    self.police_actions = [1, 3]
+                elif ac > pc:
+                    self.police_actions = [2, 3]   
+            elif pr < ar:
+                if pc > ac:
+                    self.police_actions =    [1, 4] 
+                elif ac > pc:
+                    self.police_actions =    [2, 4] 
+            
+            
+#             maction = self.actions[np.random.randint(0, self.min_moves)];
+        
+        possible_n_states = []
+        for p_action in self.police_actions:
+            p_row = self.states[state][2] +  self.actions[p_action][0]
+            p_col = self.states[state][3] +  self.actions[p_action][1]
+            possible_n_states.append((ar, ac, p_row, p_col))
+            
+        return possible_n_states
+        
+        
+        
+        
+        
+        
+        # Next position given an action
+        row = self.states[state][2] + maction[0]
+        col = self.states[state][3] + maction[1]
+        hitting_maze_boundaries = (row == -1) or (row == self.maze.shape[0]) or \
+                                  (col == -1) or (col == self.maze.shape[1]);
+        if hitting_maze_boundaries:
+            # Stay in place, return original row, col
+            return self.states[state][2], self.states[state][3];        
+        else:
+            return row, col;     # Update state
+        
+ 
+        
     def __transitions(self):
         """ Computes the transition probabilities for every state action pair.
             :return numpy.tensor transition probabilities: tensor of transition
